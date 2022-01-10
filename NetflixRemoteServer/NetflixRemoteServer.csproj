@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>True</UseWindowsForms>
+    <StartupObject>NetflixRemoteServer.Program</StartupObject>
+    <ApplicationIcon>n.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="n.ico" />
+    <None Remove="n.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="n.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="n.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="n.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AutomationEngine\AutomationEngine.csproj" />
+  </ItemGroup>
+
+</Project>
