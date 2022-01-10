@@ -7,11 +7,11 @@
         
         static CodeEngine()
         {
-            // Command: Mouse
+            //Command: mouse
             AutomationCommandLogic mouseLogic = (args) => {return AutomationCommandResults.Unsuccessful;};
             AutomationCommand mouseCommand = new AutomationCommand("mouse", mouseLogic);
 
-            // SubCommand: Move Mouse
+            //SubCommand: mouse move
             AutomationCommandLogic mouseMoveLogic = (args) =>
             {       
                 try
@@ -33,7 +33,39 @@
             AutomationCommand mouseMoveCommand = new AutomationCommand("move", mouseMoveLogic);
             mouseCommand.SubCommands.Add(mouseMoveCommand);
 
-            //Command: Delay
+            //SubCommand: mouse click
+            AutomationCommandLogic mouseClickCommandLogic = (args) => 
+            {
+                try
+                {
+                    if (args.Length == 1)
+                    {
+                        switch (args[0])
+                        {
+                            case "left":
+                                VirtualInput.LeftClick();
+                                break;
+                            case "right":
+                                VirtualInput.RightClick();
+                                break;
+                            case "middle":
+                                VirtualInput.MiddleClick();
+                                break;
+                            default:
+                                return AutomationCommandResults.Unsuccessful;
+                                break;
+                        }
+
+                        return AutomationCommandResults.Succesful;
+                    }
+                }
+                catch (Exception ex) { }
+                return AutomationCommandResults.Unsuccessful;
+            };
+            AutomationCommand mouseClickCommand = new AutomationCommand("click", mouseClickCommandLogic);
+            mouseCommand.SubCommands.Add(mouseClickCommand);
+
+            //Command: delay
             AutomationCommandLogic delayLogic = (args) =>
             {
                 try
@@ -53,22 +85,27 @@
             automationCommands = new List<AutomationCommand> { mouseCommand, delayCommand };
         }
         
-        static public CodeExecutionResults ExecuteCode(string code)
+        static public async Task<CodeExecutionResults> ExecuteCodeAsync(string code)
         {
-            AutomationInstruction[] instructions = CodeToInstructionsArray(code);
-
-            for (int i = 0; i < instructions.Length; i++)
+            Task<CodeExecutionResults> executeCodeTask = Task.Run(() =>
             {
-                AutomationInstruction instruction = instructions[i];
-                AutomationCommandResults result = ExecuteInstruction(instruction);
+                AutomationInstruction[] instructions = CodeToInstructionsArray(code);
 
-                if (result != AutomationCommandResults.Succesful)
+                for (int i = 0; i < instructions.Length; i++)
                 {
-                    return new CodeExecutionResults(instruction.RawInstruction, i + 1);
-                }
-            }
+                    AutomationInstruction instruction = instructions[i];
+                    AutomationCommandResults result = ExecuteInstruction(instruction);
 
-            return new CodeExecutionResults();
+                    if (result != AutomationCommandResults.Succesful)
+                    {
+                        return new CodeExecutionResults(instruction.RawInstruction, i + 1);
+                    }
+                }
+
+                return new CodeExecutionResults();
+            });
+
+            return await executeCodeTask;
         }
 
         static public AutomationInstruction[] CodeToInstructionsArray(string code)

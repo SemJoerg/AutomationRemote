@@ -51,7 +51,6 @@ namespace NetflixRemoteServer
                 MainWindow = new MainMenu();
             
             MainWindow.Show();
-            MainWindow.Focus();
             MainWindow.Activate();
         }
 

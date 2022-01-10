@@ -54,7 +54,7 @@ namespace NetflixRemoteServer
                         Dispatcher.Invoke(() => { lblMousePosition.Content = $"x: {mousePosition.X}  y: {mousePosition.Y}"; });
                     }
                     
-                    Thread.Sleep(50);
+                    Thread.Sleep(200);
                 }
             }
             catch(ThreadAbortException ex)
@@ -64,29 +64,7 @@ namespace NetflixRemoteServer
 
         private void BtnStartStopServerClick(object sender, RoutedEventArgs e)
         {
-            CodeExecutionResults results = CodeEngine.ExecuteCode(commands[0].InstructionsString);
-
-            if(results.Succesful)
-            {
-                MessageBox.Show("Code Executed Succesful");
-            }
-            else
-            {
-                Program.ErrorMessage($"Code Executed Unsuccesful\n\nError in {results.PositionOfInstruction}th Instruction\n'{results.Instruction}'");
-            }
-
-            return;
-
-            foreach (AutomationInstruction instruction in commands[0].InstructionsArray)
-            {
-                string output = "";
-                for (int i = 0; i < instruction.InstructionSegments.Length; i++)
-                {
-                    output += $"[{i}] ";
-                    output += instruction.InstructionSegments[i] + "\n";
-                }
-                MessageBox.Show(output);
-            }
+            
         }
 
         private void BtnAddClick(object sender, RoutedEventArgs e)
@@ -94,7 +72,6 @@ namespace NetflixRemoteServer
             commands.Add(new Command());
         }
 
-        
         private void BtnSaveClick(object sender, RoutedEventArgs e)
         {
             Program.SaveDialog();
@@ -130,6 +107,25 @@ namespace NetflixRemoteServer
             Program.SavedCommands = false;
         }
 
+        private async void BtnCommandRunClick(object sender, RoutedEventArgs e)
+        {
+            Command command = (sender as Button).DataContext as Command;
+            commandsControl.IsEnabled = false;
+            WindowState = WindowState.Minimized;
+            CodeExecutionResults results = await CodeEngine.ExecuteCodeAsync(command.InstructionsString);
+            commandsControl.IsEnabled = true;
+            if(WindowState == WindowState.Minimized)
+            {
+                WindowState = WindowState.Normal;
+                Activate();
+            }
+            
+            if (!results.Succesful)
+            {
+                Program.ErrorMessage($"Code Executed Unsuccesful\n\nError in {results.PositionOfInstruction}th Instruction\n'{results.Instruction}'");
+            }
+        }
+
         private void TBCommandChanged(object sender, TextChangedEventArgs e)
         {
             TextBox tb = (TextBox)sender;
@@ -154,7 +150,7 @@ namespace NetflixRemoteServer
             Program.SavedCommands = false;
         }
 
-        private void WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void WindowClosing(object sender, CancelEventArgs e)
         {
             if(Program.CheckIfSaved() == MessageBoxResult.Cancel)
             {

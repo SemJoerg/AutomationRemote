@@ -26,6 +26,8 @@ namespace NetflixRemoteServer
         public Command()
         {
             IsEnabled = true;
+            Name = "";
+            InstructionsString = "";
         }
 
         public Command(string name) : this()
