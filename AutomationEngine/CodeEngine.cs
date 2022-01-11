@@ -85,24 +85,29 @@
             automationCommands = new List<AutomationCommand> { mouseCommand, delayCommand };
         }
         
+        static public CodeExecutionResults ExecuteCode(string code)
+        {
+            AutomationInstruction[] instructions = CodeToInstructionsArray(code);
+
+            for (int i = 0; i < instructions.Length; i++)
+            {
+                AutomationInstruction instruction = instructions[i];
+                AutomationCommandResults result = ExecuteInstruction(instruction);
+
+                if (result != AutomationCommandResults.Succesful)
+                {
+                    return new CodeExecutionResults(instruction.RawInstruction, i + 1);
+                }
+            }
+
+            return new CodeExecutionResults();
+        }
+
         static public async Task<CodeExecutionResults> ExecuteCodeAsync(string code)
         {
             Task<CodeExecutionResults> executeCodeTask = Task.Run(() =>
             {
-                AutomationInstruction[] instructions = CodeToInstructionsArray(code);
-
-                for (int i = 0; i < instructions.Length; i++)
-                {
-                    AutomationInstruction instruction = instructions[i];
-                    AutomationCommandResults result = ExecuteInstruction(instruction);
-
-                    if (result != AutomationCommandResults.Succesful)
-                    {
-                        return new CodeExecutionResults(instruction.RawInstruction, i + 1);
-                    }
-                }
-
-                return new CodeExecutionResults();
+                return ExecuteCode(code);
             });
 
             return await executeCodeTask;
