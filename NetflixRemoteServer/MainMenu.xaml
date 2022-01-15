@@ -8,13 +8,16 @@
         Title="MainWindow" Height="925" Width="1250" WindowStartupLocation="CenterScreen" Closing="WindowClosing" Background="LightSlateGray">
     <DockPanel>
         <Border DockPanel.Dock="Top" Background="LightGreen" Height="40">
-            <DockPanel LastChildFill="False" Margin="10,0,10,0">
-                <TextBox DockPanel.Dock="Right" VerticalAlignment="Center" Text="9000" Width="75" FontSize="16"/>
-                <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" Margin="10,0,0,0" Text="Port: " FontSize="16"/>
-                <Button DockPanel.Dock="Right" VerticalAlignment="Center" Content="Start" Padding="5,1,5,1" FontSize="16" Click="BtnStartStopServerClick"/>
-                <Button DockPanel.Dock="Left" VerticalAlignment="Center" Content="Add" Margin="0,0,10,0" Padding="5,1,5,1" FontSize="16" Click="BtnAddClick"/>
-                <Button DockPanel.Dock="Left" VerticalAlignment="Center" Content="Save" Padding="5,1,5,1" FontSize="16" Click="BtnSaveClick"/>
-            </DockPanel>
+            <Grid>
+                <DockPanel Margin="10,0,10,0" LastChildFill="False">
+                    <TextBox x:Name="tbxPort" DockPanel.Dock="Right" VerticalAlignment="Center" Text="9000" Width="75" FontSize="16" PreviewTextInput="TbxPortPreviewTextInput"/>
+                    <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" Margin="10,0,0,0" Text="Port: " FontSize="16"/>
+                    <Button x:Name="btnStartStop" DockPanel.Dock="Right" VerticalAlignment="Center" Content="Start" Padding="5,1,5,1" FontSize="16" Click="BtnStartStopServerClick"/>
+                    <Button x:Name="btnAdd" DockPanel.Dock="Left" VerticalAlignment="Center" Content="Add" Margin="0,0,10,0" Padding="5,1,5,1" FontSize="16" Click="BtnAddClick"/>
+                    <Button x:Name="btnSave" DockPanel.Dock="Left" VerticalAlignment="Center" Content="Save" Padding="5,1,5,1" FontSize="16" Click="BtnSaveClick"/>
+                </DockPanel>
+                <TextBlock x:Name="tbServerInfo" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
         </Border>
         <Label x:Name="lblMousePosition" DockPanel.Dock="Bottom" HorizontalAlignment="Center"/>
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -35,7 +38,7 @@
                                     <Button DockPanel.Dock="Right" Width="20" Height="20" Background="Transparent" FontWeight="SemiBold" Margin="4,0,0,0" Padding="0,0,0,1" Content="←" Click="BtnCommandMoveLeftClick"/>
                                     <Button DockPanel.Dock="Right" Width="20" Height="20" Background="Transparent" FontWeight="SemiBold" Content="R" Click="BtnCommandRunClick"/>
 
-                                    <TextBox Grid.Column="1" DockPanel.Dock="Top" Margin="0,0,10,0" Text="{Binding Name}" FontSize="14" TextChanged="TBCommandChanged"/>
+                                    <TextBox Grid.Column="1" DockPanel.Dock="Top" Margin="0,0,10,0" Text="{Binding Name}" FontSize="14" PreviewTextInput="TbxCommandPreviewTextInput"/>
                                 </DockPanel>
                                 <TextBox ScrollViewer.CanContentScroll="True"
                                          ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -43,7 +46,7 @@
                                          AcceptsReturn="True"
                                          Margin="-0.5,0,0,0"
                                          Text="{Binding InstructionsString}"
-                                         TextChanged="TBCommandChanged"/>
+                                         PreviewTextInput="TbxCommandPreviewTextInput"/>
                             </DockPanel>
                         </Border>
                     </DataTemplate>

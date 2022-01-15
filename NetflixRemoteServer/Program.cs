@@ -25,6 +25,8 @@ namespace NetflixRemoteServer
 
         static public ObservableCollection<Command> commandsList;
 
+        static public TcpServer TcpServer { get; set; }
+
         [STAThread]
         static void Main(string[] args)
         {
@@ -50,6 +52,7 @@ namespace NetflixRemoteServer
             commandsList = new ObservableCollection<Command>();
             LoadCommands(ref commandsList);
             SavedCommands = true;
+            TcpServer = new TcpServer(9000);
 
             app = new App(hideApp);
             app.Run();

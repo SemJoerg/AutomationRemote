@@ -15,39 +15,56 @@ namespace NetflixRemoteServer
         Stopping,
         Running
     }
-    
+
+    public delegate void TcpServerInfoEventHandler (TcpServer tcpServer, string message);
+
     public class TcpServer
     {
-        private TcpListener tcpListener;
+        private IPAddress ipAddress;
+        public int Port { get; set; }
 
-        private int _port;
-        public int Port
+        public string CurrentTcpServerInfo { get; private set; }
+        
+        public event TcpServerInfoEventHandler TcpServerInfo;
+
+        public event EventHandler ServerStateChanged;
+        private TcpServerState _serverState;
+        public TcpServerState ServerState
         {
-            get { return _port; }
-            set 
-            {
-                if(_port != value)
+            get { return _serverState; }
+            private set 
+            { 
+                if(value != _serverState)
                 {
-                    tcpListener = new TcpListener(value);
-                    _port = value;
+                    if(_serverState == TcpServerState.Stopping && value == TcpServerState.Stopped)
+                    {
+                        _serverState = value;
+                        FireTcpServerInfoEvent("");
+                        ServerStateChanged?.Invoke(this, EventArgs.Empty);
+                    }
+                    else if(_serverState != TcpServerState.Stopping)
+                    {
+                        _serverState = value;
+                        ServerStateChanged?.Invoke(this, EventArgs.Empty);
+                    }
+                    
                 }
             }
         }
 
-        public TcpServerState ServerState { get; private set; }
-
         public TcpServer(int port)
         {
-            _port = port;
-            tcpListener = new TcpListener(port);
+            ServerState = TcpServerState.Stopped;
+            ipAddress = IPAddress.Any; //new IPAddress(new byte[] { 127, 0, 0, 1 });
+            Port = port;
         }
-
+        
         public void Stop()
         {
             ServerState = TcpServerState.Stopping;
         }
 
-        public bool Run()
+        public  bool Run()
         {
             if(ServerState !=TcpServerState.Stopped)
             {
@@ -55,68 +72,86 @@ namespace NetflixRemoteServer
             }
             
             ServerState = TcpServerState.Running;
-            tcpListener.Start();
-
-            byte[] buffer = new byte[20];
-            byte[] commandListInBytes = GetCommandListInBytes();
-            int bytesInBuffer;
-
-            List<int> commandsToExectue = new List<int>();
+            Socket listenerSocket = null;
             string currendCommand = "";
+            Socket handler = null;
 
-            Socket socket = null;
-
-            while (ServerState != TcpServerState.Stopping)
+            while(ServerState != TcpServerState.Stopping)
             {
-                if(tcpListener.Pending())
+                FireTcpServerInfoEvent("No client connected");
+                listenerSocket = InitTcpSocket();
+                Task<Socket> acceptSocketTask = listenerSocket.AcceptAsync();
+                while (ServerState != TcpServerState.Stopping)
                 {
-                    socket = tcpListener.AcceptSocket();
-                    break;
+                    if (acceptSocketTask.IsCompleted)
+                    {
+                        listenerSocket.Close();
+                        listenerSocket = null;
+                        break;
+                    }
+                    Thread.Sleep(50);
                 }
-                Thread.Sleep(200);
+
+                if (ServerState != TcpServerState.Stopping)
+                {
+                    handler = acceptSocketTask.Result;
+                    FireTcpServerInfoEvent($"Connected with: {handler.RemoteEndPoint}");
+                    SendCommandList(handler);
+                }
+
+                while (ServerState != TcpServerState.Stopping && IsSocketConnected(handler))
+                {
+                    ListenForCommands(handler, ref currendCommand);
+                }
+
+                if (handler != null)
+                {
+                    handler.Shutdown(SocketShutdown.Both);
+                    handler.Close();
+                    handler = null;
+                }
             }
 
-            while (ServerState != TcpServerState.Stopping)
+            if(listenerSocket != null)
             {
-                socket.Send(commandListInBytes);
-
-                try
-                {
-                    bytesInBuffer = socket.Receive(buffer);
-                    string rawData = Encoding.UTF8.GetString(buffer, 0, bytesInBuffer);
-
-                    foreach (char letter in rawData)
-                    {
-                        switch (letter)
-                        {
-                            case '<':
-                                currendCommand = "";
-                                break;
-                            case '>':
-                                commandsToExectue.Add(Convert.ToInt32(currendCommand));
-                                break;
-                            default:
-                                currendCommand += letter;
-                                break;
-                        }
-                    }
-
-                    foreach (int command in commandsToExectue)
-                    {
-                        AutomationEngine.CodeEngine.ExecuteCode(Program.commandsList[command].InstructionsString);
-                    }
-                }
-                catch (Exception ex) { }
-                
+                listenerSocket.Close();
             }
-
-            socket.Close();
-            tcpListener.Stop();
             ServerState = TcpServerState.Stopped;
             return true;
         }
 
-        private byte[] GetCommandListInBytes()
+        public async Task RunAsync()
+        {
+            Task task = new Task(() =>
+            {
+                Run();
+            });
+
+            task.Start();
+
+            await task;
+        }
+
+        bool IsSocketConnected(Socket socket)
+        {
+            bool part1 = socket.Poll(1000, SelectMode.SelectRead);
+            bool part2 = (socket.Available == 0);
+            if ((part1 && part2) || !socket.Connected)
+                return false;
+            else
+                return true;
+        }
+
+        private Socket InitTcpSocket()
+        {
+
+            Socket tcpSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            tcpSocket.Bind(new IPEndPoint(ipAddress, Port));
+            tcpSocket.Listen(10);
+            return tcpSocket;
+        }
+
+        private void SendCommandList(Socket socket)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -132,8 +167,49 @@ namespace NetflixRemoteServer
             }
             sb.Append(">");
 
-            return Encoding.UTF8.GetBytes(sb.ToString());
+            byte[] buffer = Encoding.UTF8.GetBytes(sb.ToString());
+
+            socket.Send(buffer);
         }
 
+        private void ListenForCommands(Socket socket, ref string currentCommand)
+        {
+            if (socket.Available == 0)
+            {
+                Thread.Sleep(50);
+                return;
+            }
+
+            try
+            {
+                byte[] buffer = new byte[socket.Available];
+                int bytesInBuffer = socket.Receive(buffer);
+                string rawData = Encoding.UTF8.GetString(buffer, 0, bytesInBuffer);
+
+                foreach (char letter in rawData)
+                {
+                    switch (letter)
+                    {
+                        case '<':
+                            currentCommand = "";
+                            break;
+                        case '>':
+                            int commandIndex = Convert.ToInt32(currentCommand);
+                            AutomationEngine.CodeEngine.ExecuteCode(Program.commandsList[commandIndex].InstructionsString);
+                            break;
+                        default:
+                            currentCommand += letter;
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex) { }
+        }
+
+        private void FireTcpServerInfoEvent(string info)
+        {
+            CurrentTcpServerInfo = info;
+            TcpServerInfo?.Invoke(this, info);
+        }
     }
 }
