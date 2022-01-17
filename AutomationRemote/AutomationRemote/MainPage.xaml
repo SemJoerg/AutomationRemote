@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AutomationRemote.MainPage">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Frame Grid.Row="0" BackgroundColor="DodgerBlue">
+            <Label TextColor="Black" FontAttributes="Bold" FontSize="Title" HorizontalTextAlignment="Center" Text="Connect to Server"/>
+        </Frame>
+        <StackLayout Grid.Row="1" Margin="10,10,10,200" VerticalOptions="End">
+            <Label Text="IP Adress" FontSize="Subtitle"/>
+            <Entry x:Name="tbxIp" TextChanged="tbxIp_TextChanged"/>
+            <Label Text="Port" FontSize="Subtitle"/>
+            <Entry x:Name="tbxPort" Keyboard="Numeric" TextChanged="tbxPort_TextChanged"/>
+            <Button Text="Connect" Clicked="Button_Clicked"/>
+        </StackLayout>
+    </Grid>
+
+</ContentPage>
