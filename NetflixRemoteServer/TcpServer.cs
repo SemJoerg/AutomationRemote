@@ -183,8 +183,8 @@ namespace NetflixRemoteServer
             try
             {
                 byte[] buffer = new byte[socket.Available];
-                int bytesInBuffer = socket.Receive(buffer);
-                string rawData = Encoding.UTF8.GetString(buffer, 0, bytesInBuffer);
+                socket.Receive(buffer);
+                string rawData = Encoding.UTF8.GetString(buffer);
 
                 foreach (char letter in rawData)
                 {
@@ -196,6 +196,7 @@ namespace NetflixRemoteServer
                         case '>':
                             int commandIndex = Convert.ToInt32(currentCommand);
                             AutomationEngine.CodeEngine.ExecuteCode(Program.commandsList[commandIndex].InstructionsString);
+                            currentCommand = "";
                             break;
                         default:
                             currentCommand += letter;

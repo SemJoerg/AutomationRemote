@@ -13,10 +13,10 @@
         </Frame>
         <StackLayout Grid.Row="1" Margin="10,10,10,200" VerticalOptions="End">
             <Label Text="IP Adress" FontSize="Subtitle"/>
-            <Entry x:Name="tbxIp" TextChanged="tbxIp_TextChanged"/>
+            <Entry x:Name="tbxIp" TextChanged="tbxIp_TextChanged" Text="192.168.10.10"/>
             <Label Text="Port" FontSize="Subtitle"/>
-            <Entry x:Name="tbxPort" Keyboard="Numeric" TextChanged="tbxPort_TextChanged"/>
-            <Button Text="Connect" Clicked="Button_Clicked"/>
+            <Entry x:Name="tbxPort" Keyboard="Numeric" TextChanged="tbxPort_TextChanged" Text="9000"/>
+            <Button x:Name="btnConnect" Text="Connect" Clicked="Button_Clicked"/>
         </StackLayout>
     </Grid>
 
