@@ -52,6 +52,7 @@ namespace NetflixRemoteServer
             mouseTrackerThread = new Thread(new ThreadStart(TrackMouse));
             mouseTrackerThread.Start();
             tcpServer = Program.TcpServer;
+            tbxPort.Text = Convert.ToString(tcpServer.Port);
             tcpServer.ServerStateChanged += TcpServer_ServerStateChanged;
             tcpServer.TcpServerInfo += TcpServer_TcpServerInfo;
             TcpServer_ServerStateChanged(null, null);

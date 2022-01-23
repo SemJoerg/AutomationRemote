@@ -6,6 +6,7 @@ using System.Windows;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace NetflixRemoteServer
 {
@@ -32,30 +33,59 @@ namespace NetflixRemoteServer
         {
             bool hideApp = false;
             bool startTcpServer = false;
+            int port = 9000;
 
             if(args.Length > 0)
             {
-                foreach(string arg in args)
+                for(int i = 0; i < args.Length; i++)
                 {
+                    string arg = args[i];
                     switch (arg)
                     {
                         case "--hidden":
                             hideApp = true;
                             break;
                         case "--start":
+                            int tempPort = 0;
+                            
+                            if (args.Length >= i + 2)
+                            {
+                                
+                                bool changePort = Int32.TryParse(args[i + 1], out tempPort);
+                                if (!changePort)
+                                {
+                                    MessageBox.Show("Unable to convert port");
+                                    return;
+                                }
+
+                                port = tempPort;
+                            }
+
                             startTcpServer = true;
                             break;
                     }
                 }
             }
 
-            commandsList = new ObservableCollection<Command>();
-            LoadCommands(ref commandsList);
-            SavedCommands = true;
-            TcpServer = new TcpServer(9000);
+            using(Mutex mutex = new Mutex(false, @"AutomationServer"))
+            {
+                if (!mutex.WaitOne(0, false))
+                {
+                    MessageBox.Show("Instance already running");
+                    return;
+                }
 
-            app = new App(hideApp);
-            app.Run();
+                commandsList = new ObservableCollection<Command>();
+                LoadCommands(ref commandsList);
+                SavedCommands = true;
+                TcpServer = new TcpServer(port);
+                if(startTcpServer)
+                {
+                    TcpServer.RunAsync();
+                }
+                app = new App(hideApp);
+                app.Run();
+            }
         }
 
         public static void ErrorMessage(object message)
